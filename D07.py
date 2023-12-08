@@ -25,19 +25,17 @@ Possible hands are, ordered by strength:
     high card
 
 # Puzzle description 
-we want to rank the hands in the input file by strength (winning hand = ), and 
+we want to rank the hands in the input file by strength (winning hand = highest number), and 
 then multiply each rank by it's bid. Add those numbers together
 to solve the puzzle. 
 
 # Approach
-No algorithms here, folks. This is just a grind.
-
+- Sort the cards in each hand to categorize them. 
+- score the hands for sorting by mutliplying the criteria by powers of 10.
+- sort the hands.
+- calculate the final score of each hand
 '''
 
-CARDS = '23456789TJQKA'
-
-def beats(a, b):
-    return CARDS.find(a) > CARDS.find(b)
 
 FIVE = 'five'
 FOUR = 'four'
@@ -53,80 +51,137 @@ ranked_types.reverse()
 with open('D07.txt', 'r') as file:
     input = [line.split(' ') for line in file.read().splitlines()]
 
-hands = [(list(cards), int(bid)) for [cards, bid] in input]
+hands = [(list(cards), int(bid), cards) for [cards, bid] in input]
 
-scored_hands = []
+def part1():
+    CARDS = '23456789TJQKA'
 
-for (cards, bid) in hands:
-    cards.sort(key=lambda card: CARDS.find(card))
-    print(cards)
-    previous_card = ''
-    sequence_length = 1
-    type = ''
-    type_high_card = ''
-    type_second_high_card = ''
-    for card in cards:
-        # print(f'card is {card} previous card is {previous_card}')
-        if card == previous_card:
-            # print('MATCH!')
-            sequence_length += 1
-            if sequence_length == 2:
-                # print('found pair')
-                if type == '':
-                    type = PAIR
-                    type_high_card = card
-                    type_second_high_card = previous_card
-                elif type == PAIR:
-                    type = TWO_PAIR
-                    if beats(card, type_high_card):
-                        type_second_high_card = type_high_card
-                        type_high_card = card
-                elif type == THREE:
-                    type = FULL_HOUSE
-                    if beats(card, type_high_card):
-                        type_second_high_card = type_high_card
-                        type_high_card = card
-            elif sequence_length == 3:
-                # print('found three')
-                if type == PAIR:
-                    if type_high_card == card:
-                        type = THREE
-                        type_second_high_card = cards[1]
-                elif type == TWO_PAIR:
-                    type = FULL_HOUSE
-                    if beats(card, type_high_card):
-                        type_second_high_card = type_high_card
-                        type_high_card = card
-            elif sequence_length == 4:
-                if type_high_card == card:
+    scored_hands = []
+
+    for (cards, bid, og_cards) in hands:
+        cards.sort(key=lambda card: CARDS.find(card))
+        previous_card = ''
+        sequence_length = 1
+        type = ''
+        for card in cards:
+            if card == previous_card:
+                sequence_length += 1
+                if sequence_length == 2:
+                    if type == '':
+                        type = PAIR
+                    elif type == PAIR:
+                        type = TWO_PAIR
+                    elif type == THREE:
+                        type = FULL_HOUSE
+                elif sequence_length == 3:
+                    if type == PAIR:
+                            type = THREE
+                    elif type == TWO_PAIR:
+                        type = FULL_HOUSE
+                elif sequence_length == 4:
                     type = FOUR
-                type_second_high_card = cards[0]
+                elif sequence_length == 5:
+                    type = FIVE
+            else:
+                sequence_length = 1
+            previous_card = card
 
-            elif sequence_length == 5:
+        if type == '':
+            type = HIGH_CARD
+        
+        score = ranked_types.index(type)*100000000000 + CARDS.find(og_cards[0])*100000000 + CARDS.find(og_cards[1])*1000000 + CARDS.find(og_cards[2])*10000 + CARDS.find(og_cards[3])*100 + CARDS.find(og_cards[4])
+
+        scored_hands.append((score, bid, og_cards))
+
+    scored_hands.sort(key=lambda data: data[0])
+
+    print(sum([(i+1)*scored_hands[i][1] for i in range(len(scored_hands))]))
+
+''''
+# PART 2
+
+Js are now wild cards that have the lowest point value in ranking 
+
+## Approach
+same as before, but count the Js and change the hand type based on how many 
+wild cards are available. Not very elegant but it works.
+
+'''
+
+
+def part2():
+    CARDS = 'J23456789TQKA'
+
+    scored_hands = []
+
+    for (cards, bid, og_cards) in hands:
+        cards.sort(key=lambda card: CARDS.find(card))
+        previous_card = ''
+        sequence_length = 1
+        type = ''
+        joker_count = 0
+        for card in cards:
+            if card == 'J':
+                joker_count += 1
+            elif card == previous_card:
+                sequence_length += 1
+                if sequence_length == 2:
+                    if type == '':
+                        type = PAIR
+                    elif type == PAIR:
+                        type = TWO_PAIR
+                    elif type == THREE:
+                        type = FULL_HOUSE
+                elif sequence_length == 3:
+                    if type == PAIR:
+                            type = THREE
+                    elif type == TWO_PAIR:
+                        type = FULL_HOUSE
+                elif sequence_length == 4:
+                    type = FOUR
+                elif sequence_length == 5:
+                    type = FIVE
+            else:
+                sequence_length = 1
+            previous_card = card
+
+        if type == '':
+            type = HIGH_CARD
+
+        if joker_count > 3:
+            type = FIVE
+        if joker_count == 3:
+            if type == PAIR:
                 type = FIVE
-        else:
-            sequence_length = 1
-            if(type != TWO_PAIR and type != FULL_HOUSE):
-                if beats(card, type_second_high_card):
-                    type_second_high_card = card    
-        previous_card = card
+            else:
+                type = FOUR
+        if joker_count == 2:
+            if type == THREE:
+                type = FIVE
+            elif type == PAIR:
+                type = FOUR
+            else:
+                type = THREE
+        if joker_count == 1:
+            if type == FOUR:
+                type = FIVE
+            elif type == THREE:
+                type = FOUR
+            elif type == PAIR:
+                type = THREE
+            elif type == TWO_PAIR:
+                type = FULL_HOUSE
+            else:
+                type = PAIR
 
-    if type == '':
-        type = HIGH_CARD
-        type_high_card = cards[4]
-        type_second_high_card = cards[3]
+        
+        score = ranked_types.index(type)*100000000000 + CARDS.find(og_cards[0])*100000000 + CARDS.find(og_cards[1])*1000000 + CARDS.find(og_cards[2])*10000 + CARDS.find(og_cards[3])*100 + CARDS.find(og_cards[4])
 
-    print(f'type is: {type} high card is {type_high_card} second high card is {type_second_high_card}')
+        scored_hands.append((score, bid, og_cards, type))
 
-    score = ranked_types.index(type)*10000 + CARDS.find(type_high_card)*100
-    if(type_second_high_card != ''):
-        score += CARDS.find(type_second_high_card)
+    scored_hands.sort(key=lambda data: data[0])
 
-    scored_hands.append((score, bid, cards))
+    print(sum([(i+1)*scored_hands[i][1] for i in range(len(scored_hands))]))
 
-scored_hands.sort(key=lambda data: data[0])
-
-for hand in scored_hands:
-    print(hand)
-
-print(sum([(i+1)*scored_hands[i][1] for i in range(len(scored_hands))]))
+part1()
+part2()
