@@ -61,4 +61,54 @@ def part1():
                 return r*100
     print(f'part 1: {sum([score(grid) for grid in input])}')
 
+'''
+# Part 2
+
+turns out there is one error in each grid which, when corrected, 
+makes a different line of symetry. 
+
+## Approach
+Modify the previous code to compare each character, instead of substrings,
+and keep count of the differences we find. 
+'''
+
+def part2():
+    def score(grid):
+        #check for horizontal reflection with exactly one error
+        for c in range(1, len(grid[0])):
+            diffs=0
+            for r in range(0, len(grid)):
+                start = 2*c-len(grid[0]) if 2*c-len(grid[0]) > 0 else 0
+                a = grid[r][start:c]
+                b = grid[r][(2*c)-1:c-1:-1]
+                for n in range(len(a)):
+                    if a[n] != b[n]:
+                        diffs+=1
+                if diffs > 1:
+                    #this isn't the column
+                    break
+            else:
+                if diffs == 1:
+                    return c
+
+        #check for vertical reflection with one error
+        for r in range(1, len(grid)):
+            diffs = 0
+            for c in range(0, len(grid[r])):
+                col = [grid[n][c] for n in range(len(grid))]
+                start = 2*r-len(grid) if 2*r-len(grid) > 0 else 0
+                a = col[start:r]
+                b= col[(2*r)-1:r-1:-1]
+                for n in range(len(a)):
+                    if a[n] != b[n]:
+                        diffs+=1
+                if diffs > 1:
+                    #this isn't the row
+                    break
+            else:
+                if diffs == 1:
+                    return r*100
+    print(f'part 2: {sum([score(grid) for grid in input])}')
+
 part1()
+part2()
