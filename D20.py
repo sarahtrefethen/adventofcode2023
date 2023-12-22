@@ -161,4 +161,19 @@ def part1():
 
     print(f'part 1: {highs * lows}')
 
-part1()
+def part2():
+    for i in range(10000000000000000):
+        queue = modules['broadcaster'].send()
+
+        while len(queue):
+            (target, source, pulse) = queue.pop()
+            if target == 'rx' and pulse == LOW:
+                print(f'part 2: {i}')
+                return
+            modules[target].receive(source, pulse)
+            if result := modules[target].send():
+                queue = result + queue
+
+    print(f'part 2: something went wrong')
+
+part2()
